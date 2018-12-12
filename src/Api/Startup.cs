@@ -42,6 +42,8 @@ namespace FlickrWrapper.Api
             
             services.AddTransient<ICorrelationIdSource, CorrelationIdSource>();
             services.AddTransient<IFlickrWrapperApp, FlickrWrapperApp>();
+            services.AddHttpClient<IFlickrWrapperApp, FlickrWrapperApp>();
+
             var flickConfig = _configuration.GetSection("flickr");
             services.AddSingleton(new FlickrConfiguration(
                 apiUrl: flickConfig["apiUrl"],

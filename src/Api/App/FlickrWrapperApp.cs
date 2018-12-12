@@ -17,16 +17,16 @@ namespace FlickrWrapper.Api.App
             public static readonly string SEARCH = "flickr.photos.search";
             public static readonly string GET_INFO = "flickr.photos.getInfo";
         }
-
-        private static readonly HttpClient _httpClient = new HttpClient();
-
+        
         private readonly FlickrConfiguration _configuration;
         private readonly ICorrelationIdSource _correlationIdSource;
+        private readonly HttpClient _httpClient;
 
-        public FlickrWrapperApp(FlickrConfiguration configuration, ICorrelationIdSource correlationIdSource)
+        public FlickrWrapperApp(FlickrConfiguration configuration, ICorrelationIdSource correlationIdSource, HttpClient httpClient)
         {
             _configuration = configuration;
             _correlationIdSource = correlationIdSource;
+            _httpClient = httpClient;
         }
 
         public async Task<AppResponse<string>> Search(FlickrSearchArguments searchArguments = null)
@@ -72,7 +72,7 @@ namespace FlickrWrapper.Api.App
             return $"{_configuration.ApiUrl}/?method={method}&api_key={_configuration.Key}&format=json&nojsoncallback=1";
         }
 
-        private async Task<AppResponse<string>> CallUrl(string url)
+        protected internal async Task<AppResponse<string>> CallUrl(string url)
         {
             var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Add("X-Correlation-ID", _correlationIdSource.GetCurrentCorrelationId());
