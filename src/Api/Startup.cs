@@ -1,0 +1,81 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using FlickerWrapper.Api.DI;
+using FlickerWrapper.Api.Middleware;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using NLog.Extensions.Logging;
+using NLog.Web;
+
+namespace FlickrWrapper.Api
+{
+    public class Startup
+    {
+        private readonly IConfiguration _configuration;
+        private IContainer _applicationContainer;
+
+        public Startup(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
+        public IServiceProvider ConfigureServices(IServiceCollection services)
+        {
+            services.AddMvc()
+            .AddControllersAsServices()
+            .AddJsonOptions(e =>
+            {
+                e.SerializerSettings.DateFormatString = "yyyy-MM-dd'T'HH:mm:ss.fffK";
+                e.SerializerSettings.Culture = System.Globalization.CultureInfo.InvariantCulture;
+                e.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+            });
+
+            services.AddLogging(e => e.ClearProviders());
+
+            _applicationContainer = CreateContainer(services);
+
+            return new AutofacServiceProvider(_applicationContainer);
+        }
+
+        private IContainer CreateContainer(IServiceCollection services)
+        {
+            var builder = new ContainerBuilder();
+            builder.RegisterModule(new ApiModule(_configuration));
+            builder.Populate(services);
+            return builder.Build();
+        }
+
+        public void Configure(
+            IApplicationBuilder app,
+            IHostingEnvironment env,
+            ILoggerFactory loggerFactory,
+            IApplicationLifetime appLifetime)
+        {
+            NLog.LogManager.LoadConfiguration("nlog.config");
+            loggerFactory.AddNLog();
+
+            app.UseMiddleware<LoggingMiddleware>();
+            app.UseMvc();
+
+            appLifetime.ApplicationStarted.Register(() =>
+            {
+                _applicationContainer.Resolve<ILogger<Startup>>().LogInformation("Application has started");
+            });
+            
+            appLifetime.ApplicationStopped.Register(() =>
+            {
+                _applicationContainer.Resolve<ILogger<Startup>>().LogInformation("Trying to stop gracefully...");
+                _applicationContainer.Dispose();
+            });
+        }
+
+    }
+}
