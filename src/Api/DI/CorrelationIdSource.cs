@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace FlickerWrapper.Api.DI
+namespace FlickrWrapper.Api.DI
 {
     public class CorrelationIdSource : ICorrelationIdSource
     {
@@ -17,12 +17,12 @@ namespace FlickerWrapper.Api.DI
 
         public string GetCurrentCorrelationId()
         {
-            if (_accessor.HttpContext.Request.Headers.TryGetValue("CorrelationId", out var vals))
+            if (_accessor.HttpContext.Items.TryGetValue("X-Correlation-ID", out var vals))
             {
-                return vals;
+                return vals.ToString();
             }
 
-            return Guid.Empty.ToString("N");
+            return Guid.NewGuid().ToString("N");
         }
     }
 }

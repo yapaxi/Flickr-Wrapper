@@ -1,4 +1,4 @@
-﻿namespace FlickerWrapper.Api.DI
+﻿namespace FlickrWrapper.Api.DI
 {
     public interface ICorrelationIdSource
     {

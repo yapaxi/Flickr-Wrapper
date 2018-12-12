@@ -1,3 +1,7 @@
 {
-
+  "flickr":  {
+    "apiUrl": "https://api.flickr.com/services/rest",
+    "apiKey": "REPLACE_ME",
+    "apiKeySecret": "REPLACE_ME"
+  }
 }

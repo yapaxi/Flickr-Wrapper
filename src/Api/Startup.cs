@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Autofac;
-using Autofac.Extensions.DependencyInjection;
-using FlickerWrapper.Api.DI;
-using FlickerWrapper.Api.Middleware;
+using FlickrWrapper.Api.App;
+using FlickrWrapper.Api.DI;
+using FlickrWrapper.Api.Middleware;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -20,7 +19,8 @@ namespace FlickrWrapper.Api
     public class Startup
     {
         private readonly IConfiguration _configuration;
-        private IContainer _applicationContainer;
+
+        private IServiceProvider _serviceProvider;
 
         public Startup(IConfiguration configuration)
         {
@@ -39,18 +39,19 @@ namespace FlickrWrapper.Api
             });
 
             services.AddLogging(e => e.ClearProviders());
+            
+            services.AddTransient<ICorrelationIdSource, CorrelationIdSource>();
+            services.AddTransient<IFlickrWrapperApp, FlickrWrapperApp>();
+            var flickConfig = _configuration.GetSection("flickr");
+            services.AddSingleton(new FlickrConfiguration(
+                apiUrl: flickConfig["apiUrl"],
+                key: flickConfig["apiKey"],
+                secret: flickConfig["apiKeySecret"]
+            ));
 
-            _applicationContainer = CreateContainer(services);
+            _serviceProvider = services.BuildServiceProvider();
 
-            return new AutofacServiceProvider(_applicationContainer);
-        }
-
-        private IContainer CreateContainer(IServiceCollection services)
-        {
-            var builder = new ContainerBuilder();
-            builder.RegisterModule(new ApiModule(_configuration));
-            builder.Populate(services);
-            return builder.Build();
+            return _serviceProvider;
         }
 
         public void Configure(
@@ -67,13 +68,12 @@ namespace FlickrWrapper.Api
 
             appLifetime.ApplicationStarted.Register(() =>
             {
-                _applicationContainer.Resolve<ILogger<Startup>>().LogInformation("Application has started");
+                _serviceProvider.GetService<ILogger<Startup>>().LogInformation("Application has started");
             });
             
             appLifetime.ApplicationStopped.Register(() =>
             {
-                _applicationContainer.Resolve<ILogger<Startup>>().LogInformation("Trying to stop gracefully...");
-                _applicationContainer.Dispose();
+                _serviceProvider.GetService<ILogger<Startup>>().LogInformation("Trying to stop gracefully...");
             });
         }
 

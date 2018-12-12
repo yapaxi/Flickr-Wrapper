@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlickerWrapper.Api.Middleware
+namespace FlickrWrapper.Api.Middleware
 {
     public class LoggingMiddleware
     {
@@ -23,13 +23,13 @@ namespace FlickerWrapper.Api.Middleware
 
         public async Task Invoke(HttpContext context)
         {
-            if (context.Request.Headers.TryGetValue("CorrelationId", out var vals))
+            if (context.Request.Headers.TryGetValue("X-Correlation-ID", out var vals))
             {
-                context.Items["CorrelationId"] = vals;
+                context.Items["X-Correlation-ID"] = vals;
             }
             else
             {
-                context.Items["CorrelationId"] = Guid.NewGuid().ToString("N");
+                context.Items["X-Correlation-ID"] = Guid.NewGuid().ToString("N");
             }
 
             context.Request.EnableRewind();

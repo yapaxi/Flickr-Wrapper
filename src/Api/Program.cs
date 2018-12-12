@@ -21,6 +21,7 @@ namespace FlickrWrapper.Api
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration(e => e.AddJsonFile("configuration.json")
+                                                 .AddJsonFile("configuration.local.json")
                                                  .AddEnvironmentVariables())
                 .UseNLog()
                 .UseStartup<Startup>();
